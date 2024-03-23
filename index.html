@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RF demodulated bits to ESPHome transmitter raw value converter</title>
+    <style>
+        /* CSS is based on the work of Andrey: https://codepen.io/McXinuS/pen/yMqJLd */
+        #converter-form {
+            width: 80vw;
+            margin: 0 auto;
+            /* background-color: #fcfcfc; */
+            /* box-shadow: 1px 4px 10px 1px #aaa; */
+            padding: 20px 50px 40px;
+            font-family: sans-serif;
+        }
+
+        #converter-form * {
+            box-sizing: border-box;
+        }
+
+        #converter-form h2 {
+            color: #414141;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #converter-form input {
+            margin-bottom: 15px;
+        }
+
+        #converter-form input[type=text] {
+            display: block;
+            height: 32px;
+            padding: 6px 16px;
+            width: 100%;
+            border: none;
+            background-color: #f3f3f3;
+        }
+    
+        #converter-form input[type=text]:focus, #converter-form textarea {
+            outline:none;
+            border: 2px solid #207cca;
+        }
+
+        #converter-form input[type=text]#input_length {
+            width: 150px;
+            display: inline;
+        }
+
+        #converter-form label {
+            color: #777;
+            font-size: 0.8em;
+        }
+
+        #converter-form textarea {
+            width: 100%;
+            height: 100px;
+            background-color: #f3f3f3;
+            border: none;
+            padding: 6px 16px;
+        }
+
+        #converter-form button[type=submit] {
+            display: block;
+            margin: 20px auto 20px;
+            width: 150px;
+            height: 40px;
+            border-radius: 1px;
+            border: none;
+            color: #eee;
+            font-weight: 700;
+            box-shadow: 1px 4px 10px 1px #aaa;
+
+            background: #207cca;
+        }
+
+        #converter-form #copyright {
+            display: block;
+            margin: 10px auto 0;
+            width: 100%;
+            color: #777;
+            text-align: end;
+            font-size: x-small;
+        }
+       
+        #converter-form #copyright a:link {
+            text-decoration: none;
+            color: #777;
+        }
+
+        #converter-form #copyright a:visited {
+            text-decoration: none;
+            color: #777;
+        }
+
+        #converter-form #copyright a:hover {
+            text-decoration: underline;
+            color: #777;
+        }
+
+        #converter-form #copyright a:active {
+            text-decoration: none;
+            color: #777;
+        }
+
+        #converter-form #copy_result {
+            display: block;
+            /* margin: 1px auto 0; */
+            color: #777;
+            text-align: end;
+            font-size: x-small;
+            position: absolute;
+            right: .35em;
+            top: .35em;
+            border: none;
+        }
+
+        #converter-form #result_content {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        #converter-form #result_content button {
+            border: none;
+            background: transparent;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="converter-form">
+        <h2 class="header">RF demodulated bits to ESPHome transmitter raw value converter</h2>
+        <div>
+            <!-- <label for="input_length">Bit length</label></br> -->
+            <input type="text" id="input_length" placeholder="Bit length"></input>
+            <label for="input_length">&micro;s</label></br>
+            <!-- <label for="input_data">Bit sequence</label> -->
+            <input type="text" id="input_data" placeholder="Bit sequence"></input>
+
+            <button type="submit" onclick="convert();return false;">Convert</button>
+
+            <!-- <label for="output">Result</label> -->
+            <div id="result_content">
+                <textarea readonly id="output" placeholder="Result"></textarea>
+                <div id="copy_result">
+                    <button type="button" title="Copy result" onclick="copyToClipboard(); return false;">
+                        <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 5.00005C7.01165 5.00082 6.49359 5.01338 6.09202 5.21799C5.71569 5.40973 5.40973 5.71569 5.21799 6.09202C5 6.51984 5 7.07989 5 8.2V17.8C5 18.9201 5 19.4802 5.21799 19.908C5.40973 20.2843 5.71569 20.5903 6.09202 20.782C6.51984 21 7.07989 21 8.2 21H15.8C16.9201 21 17.4802 21 17.908 20.782C18.2843 20.5903 18.5903 20.2843 18.782 19.908C19 19.4802 19 18.9201 19 17.8V8.2C19 7.07989 19 6.51984 18.782 6.09202C18.5903 5.71569 18.2843 5.40973 17.908 5.21799C17.5064 5.01338 16.9884 5.00082 16 5.00005M8 5.00005V7H16V5.00005M8 5.00005V4.70711C8 4.25435 8.17986 3.82014 8.5 3.5C8.82014 3.17986 9.25435 3 9.70711 3H14.2929C14.7456 3 15.1799 3.17986 15.5 3.5C15.8201 3.82014 16 4.25435 16 4.70711V5.00005M12 15H9M15 11H9" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="copyright">
+            &copy; 2024 - <a href="https://github.com/notisrac" target="_blank">noti</a>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        function copyToClipboard() {
+            // Get the text field
+            var copyText = document.getElementById("output");
+
+            // Select the text field
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // For mobile devices
+
+            // Copy the text inside the text field
+            navigator.clipboard.writeText(copyText.value);
+        }
+
+        function convert() {
+            var bitLength = parseInt(document.getElementById("input_length").value);
+            var data = document.getElementById("input_data").value;
+            var prevValue = null;
+            var resultList = [];
+
+
+            var direction = 0;
+            for (let i = 0; i < data.length; i++) {
+                const currValue = parseInt(data[i]);
+                if (currValue != prevValue) {
+                    direction = ((currValue > 0) ? 1 : -1);
+                    resultList.push(direction * bitLength);
+                    prevValue = currValue;
+                }
+                else {
+                    resultList[resultList.length - 1] += direction * bitLength;
+                }
+            }
+
+            const outputString = `[${resultList.join(', ')}] # ${data.length} bits -> ${resultList.length} items`
+            document.getElementById("output").value = outputString;
+        }
+    </script>
+</body>
+</html>
